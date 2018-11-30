@@ -1,0 +1,3 @@
+---
+backend: /vagrant/box/app
+backend_env: /var/venv/appenv

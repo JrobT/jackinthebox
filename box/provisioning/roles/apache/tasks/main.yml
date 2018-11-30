@@ -1,0 +1,17 @@
+---
+- name: 1. Ensure Apache and Python-WSGI are present
+  apt: 
+    name: "{{ item }}"
+    state: present
+  with_items: [apache2, libapache2-mod-wsgi]
+  become: yes
+  become_method: sudo
+  notify: Restart Apache
+
+- name: 2. Ensure VirtualHost is configured
+  copy:
+    src: virtualhost.conf
+    dest: /etc/apache2/sites-available/000-default.conf
+  become: yes
+  become_method: sudo
+  notify: Restart Apache

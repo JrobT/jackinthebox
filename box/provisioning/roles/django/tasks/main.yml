@@ -1,0 +1,76 @@
+---
+- name: 1. Add jonathonf PPA
+  apt_repository:
+    repo: deb http://ppa.launchpad.net/jonathonf/python-3.6/ubuntu xenial main
+    state: present
+  become: yes
+  become_method: sudo
+
+- name: 2. Ensure python 3.6 is installed
+  apt:
+    name: python3.6
+    state: present
+    update_cache: yes
+    allow_unauthenticated: yes
+  become: yes
+  become_method: sudo
+
+- name: 3. Ensure pip3 is installed
+  apt:
+    name: python3-pip
+    state: present
+  become: yes
+  become_method: sudo
+
+- name: 4. Install 'virtualenv' package
+  pip:
+    name: virtualenv
+    state: present
+    executable: pip3
+  become: yes
+  become_method: sudo
+
+- name: 5. Create virtualenv
+  pip:
+    virtualenv: "{{ backend_env }}"
+    virtualenv_python: python3.6
+    requirements: "{{ backend }}/requirements.txt"
+  become: yes
+  become_method: sudo
+
+- name: 6. Ensure Django is present in the virtualenv
+  pip:
+    name: Django
+    state: present
+    virtualenv: "{{ backend_env }}"
+  become: yes
+  become_method: sudo
+
+- stat: path={{ backend }}/manage.py
+  register: project
+
+- stat: path={{ backend }}/requirements.txt
+  register: project_requirements
+
+- name: 7. Ensure that a Django project exists
+  shell: . {{ backend_env }}/bin/activate && django-admin.py startproject app . chdir={{ backend }}
+  when: project.stat.exists is not defined or project.stat.exists == False
+
+- name: 8. Check for or otherwise create a project requirements file
+  shell: . {{ backend_env }}/bin/activate && pip freeze > requirements.txt chdir={{ backend }}
+  when: project_requirements.stat.exists is not defined or project_requirements.stat.exists == False
+
+- name: 9. Install the requirements into the virtualenv
+  pip: requirements={{ backend }}/requirements.txt virtualenv={{ backend_env }}
+
+- name: 10. Apply project schema to database engine
+  shell: . {{ backend_env }}/bin/activate && python manage.py migrate chdir={{ backend }}
+
+- name: 11. Ensure STATIC_URL points to server assets correctly
+  script: set_settings_variable.sh -d {{ backend }}/app -k "STATIC_URL" -v "'\/static\/'"
+
+- name: 12. Ensure STATIC_ROOT is set in project settings
+  script: set_settings_variable.sh -d {{ backend }}/app -k "STATIC_ROOT" -v "os.path.join(BASE_DIR, 'static')"
+
+- name: 13. Django - collectstatic
+  shell: . {{ backend_env }}/bin/activate && python manage.py collectstatic --noinput chdir={{ backend }}
