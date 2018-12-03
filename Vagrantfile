@@ -17,6 +17,7 @@ Vagrant.configure(CONFIG_VERSION) do |config|
     config_local.vm.network :forwarded_port, guest: 80, host: 8080, host_ip: "127.0.0.1"
 
     # Share an additional folder to the guest VM.
+    config_local.vm.synced_folder ".", "/vagrant", disabled: true
     config_local.vm.synced_folder "./box/app", "/vagrant/app", :mount_options => ['dmode=777', 'fmode=666']
     config_local.vm.synced_folder "./box/app", "/var/www/app", :mount_options => ['dmode=777', 'fmode=666']
     config_local.vm.synced_folder "./box/provisioning", "/vagrant/provisioning", :mount_options => ['dmode=777', 'fmode=666']
@@ -42,16 +43,14 @@ Vagrant.configure(CONFIG_VERSION) do |config|
       vb.customize ["modifyvm", :id, "--monitorcount", monitorCount]
     end
 
-
     # 'provision' using Ansible, i.e. install/setup the VM's tools.
     config_local.vm.provision "ansible_local" do |ansible_local|
 
       # Install ansible onto the VM
       ansible_local.install = true
 
-      # Paths to provisioning files.
-      ansible_local.provisioning_path = "/vagrant/box/provisioning/"
-      ansible_local.playbook = "playbook.yml"
+      # Paths to provisioning file
+      ansible_local.playbook = "/vagrant/provisioning/playbook.yml"
 
       # Remove if you have problems.
       ansible_local.compatibility_mode = "2.0"

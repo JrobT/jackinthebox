@@ -1,11 +1,10 @@
 ---
 - hosts: all
   remote_user: vagrant
-  vars_files:
-    - settings.yml
   roles:
-    - apache
-    - django
+    - Apache
+    - Django
+    - Postgres
   post_tasks:
     - name: Update and upgrade apt packages
       apt:
@@ -20,3 +19,4 @@
       shell: "true"
       notify:
         - Restart Apache
+        - Restart Postgres

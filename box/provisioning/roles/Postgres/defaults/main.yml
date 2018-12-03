@@ -1,0 +1,4 @@
+db_name: db
+db_user: jackinthebox
+db_password: jackinthebox
+psql_version: 9.5
